@@ -9,6 +9,10 @@ defmodule TeslaMate.Locations.Geocoder do
   plug Tesla.Middleware.Headers, [{"user-agent", "TeslaMate/#{@version}"}]
   plug Tesla.Middleware.JSON
   plug Tesla.Middleware.Logger, debug: true, log_level: &log_level/1
+  
+  def proxy() do
+    System.get_env("HTTP_PROXY") || "http://localhost:8080"
+  end
 
   alias TeslaMate.Locations.Address
 
@@ -62,7 +66,7 @@ defmodule TeslaMate.Locations.Geocoder do
   end
 
   defp query(url, lang, params) do
-    case get(url, query: params, headers: [{"Accept-Language", lang}]) do
+    case get(url, query: params, headers: [{"Accept-Language", lang}, proxy: proxy()]) do
       {:ok, %Tesla.Env{status: 200, body: body}} -> {:ok, body}
       {:ok, %Tesla.Env{body: %{"error" => reason}}} -> {:error, reason}
       {:ok, %Tesla.Env{} = env} -> {:error, reason: "Unexpected response", env: env}
